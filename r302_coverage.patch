@@ -1,0 +1,375 @@
+diff -urN -x NEWS R-3.0.2/src/library/utils/man/Rcov_start.Rd R-3.0.2cov/src/library/utils/man/Rcov_start.Rd
+--- R-3.0.2/src/library/utils/man/Rcov_start.Rd	1970-01-01 01:00:00.000000000 +0100
++++ R-3.0.2cov/src/library/utils/man/Rcov_start.Rd	2014-12-12 14:29:20.220522030 +0100
+@@ -0,0 +1,26 @@
++% File src/library/utils/man/Rcov_start.Rd
++% Part of the R package, http://www.R-project.org
++% Copyright 1995-2010 R Core Team
++% Distributed under GPL 2 or later
++
++\name{Rcov_start}
++\alias{Rcov_start}
++\title{Start Code Coverage analysis of R's Execution}
++\description{
++  Start Code Coverage analysis of the execution of \R expressions.
++}
++\usage{
++Rcov_start(nb_lines = 10000L, growth_rate = 2)
++}
++\arguments{
++  \item{nb_lines}{
++    Initial max number of lines per source file. 
++  }
++  \item{growth_rate}{
++    growth factor of the line numbers vectors per filename. 
++    If a reached line number L is greater than  nb_lines, the vector will
++    be reallocated with provisional size of growth_rate * L. 
++  }
++}
++
++\keyword{utilities}
+diff -urN -x NEWS R-3.0.2/src/library/utils/man/Rcov_stop.Rd R-3.0.2cov/src/library/utils/man/Rcov_stop.Rd
+--- R-3.0.2/src/library/utils/man/Rcov_stop.Rd	1970-01-01 01:00:00.000000000 +0100
++++ R-3.0.2cov/src/library/utils/man/Rcov_stop.Rd	2014-12-12 14:29:20.220522030 +0100
+@@ -0,0 +1,20 @@
++% File src/library/utils/man/Rcov_stop.Rd
++% Part of the R package, http://www.R-project.org
++% Copyright 1995-2010 R Core Team
++% Distributed under GPL 2 or later
++
++\name{Rcov_stop}
++\alias{Rcov_stop}
++\title{Start Code Coverage analysis of R's Execution}
++\description{
++  Start Code Coverage analysis of the execution of \R expressions.
++}
++\usage{
++Rcov_stop()
++}
++
++\value{
++  a named list of integer vectors holding occurrences counts (line number, frequency)
++  , named after the covered source file names. 
++}
++\keyword{utilities}
+diff -urN -x NEWS R-3.0.2/src/library/utils/NAMESPACE R-3.0.2cov/src/library/utils/NAMESPACE
+--- R-3.0.2/src/library/utils/NAMESPACE	2013-08-27 00:05:04.000000000 +0200
++++ R-3.0.2cov/src/library/utils/NAMESPACE	2014-12-12 14:29:20.220522030 +0100
+@@ -1,7 +1,7 @@
+ # Refer to all C routines by their name prefixed by C_
+ useDynLib(utils, .registration = TRUE, .fixes = "C_")
+ 
+-export("?", .DollarNames, CRAN.packages, Rprof, Rprofmem, RShowDoc,
++export("?", .DollarNames, CRAN.packages, Rcov_start, Rcov_stop, Rprof, Rprofmem, RShowDoc,
+        RSiteSearch, URLdecode, URLencode, View, adist, alarm, apropos,
+        aregexec, argsAnywhere, assignInMyNamespace, assignInNamespace,
+        as.roman, as.person, as.personList, as.relistable, aspell,
+diff -urN -x NEWS R-3.0.2/src/library/utils/R/Rcov.R R-3.0.2cov/src/library/utils/R/Rcov.R
+--- R-3.0.2/src/library/utils/R/Rcov.R	1970-01-01 01:00:00.000000000 +0100
++++ R-3.0.2cov/src/library/utils/R/Rcov.R	2014-12-12 14:29:20.220522030 +0100
+@@ -0,0 +1,27 @@
++#  File src/library/utils/R/Rcov.R
++#  Part of the R package, http://www.R-project.org
++#
++#  Copyright (C) 1995-2013 The R Core Team
++#
++#  This program is free software; you can redistribute it and/or modify
++#  it under the terms of the GNU General Public License as published by
++#  the Free Software Foundation; either version 2 of the License, or
++#  (at your option) any later version.
++#
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
++#
++#  A copy of the GNU General Public License is available at
++#  http://www.r-project.org/Licenses/
++
++Rcov_start <- function(nb_lines = 10000L, growth_rate = 2)
++{
++    invisible(.External(C_Rcov_start, nb_lines, growth_rate))
++}
++
++
++Rcov_stop <- function() {
++	invisible(.External(C_Rcov_stop))
++}
+diff -urN -x NEWS R-3.0.2/src/library/utils/src/init.c R-3.0.2cov/src/library/utils/src/init.c
+--- R-3.0.2/src/library/utils/src/init.c	2013-03-06 00:02:26.000000000 +0100
++++ R-3.0.2cov/src/library/utils/src/init.c	2014-12-12 14:29:20.220522030 +0100
+@@ -74,6 +74,8 @@
+ static const R_ExternalMethodDef ExtEntries[] = {
+     EXTDEF(download, 5),
+     EXTDEF(unzip, 7),
++    EXTDEF(Rcov_start, 2),
++    EXTDEF(Rcov_stop, 0),
+     EXTDEF(Rprof, 8),
+     EXTDEF(Rprofmem, 3),
+ 
+diff -urN -x NEWS R-3.0.2/src/library/utils/src/utils.c R-3.0.2cov/src/library/utils/src/utils.c
+--- R-3.0.2/src/library/utils/src/utils.c	2013-03-06 00:02:26.000000000 +0100
++++ R-3.0.2cov/src/library/utils/src/utils.c	2014-12-12 14:29:20.224522030 +0100
+@@ -27,6 +27,22 @@
+ #include "utils.h"
+ 
+ /* from src/main/eval.c */
++void do_Rcov_start(int nb_lines, double growth_rate);
++SEXP do_Rcov_stop(void);
++
++SEXP Rcov_start(SEXP args)
++{
++    do_Rcov_start(asInteger(CADR(args)), asReal(CADDR(args)));
++    return R_NilValue;		/* -Wall */
++}
++
++
++SEXP Rcov_stop(void)
++{
++    return do_Rcov_stop();
++}
++
++/* from src/main/eval.c */
+ SEXP do_Rprof(SEXP args);
+ 
+ SEXP Rprof(SEXP args)
+diff -urN -x NEWS R-3.0.2/src/library/utils/src/utils.h R-3.0.2cov/src/library/utils/src/utils.h
+--- R-3.0.2/src/library/utils/src/utils.h	2013-03-06 00:02:26.000000000 +0100
++++ R-3.0.2cov/src/library/utils/src/utils.h	2014-12-12 14:29:20.224522030 +0100
+@@ -26,6 +26,8 @@
+ 
+ SEXP objectSize(SEXP s);
+ SEXP unzip(SEXP args);
++SEXP Rcov_start(SEXP args);
++SEXP Rcov_stop(void);
+ SEXP Rprof(SEXP args);
+ SEXP Rprofmem(SEXP args);
+ 
+diff -urN -x NEWS R-3.0.2/src/main/eval.c R-3.0.2cov/src/main/eval.c
+--- R-3.0.2/src/main/eval.c	2013-07-28 00:05:03.000000000 +0200
++++ R-3.0.2cov/src/main/eval.c	2014-12-12 14:29:20.224522030 +0100
+@@ -37,6 +37,202 @@
+ 
+ static SEXP bcEval(SEXP, SEXP, Rboolean);
+ 
++
++static int R_Code_Coverage = 0;
++#define R_CODE_COVERAGE
++#ifdef  R_CODE_COVERAGE
++
++/* A Simple mechanism for implementing code coverage.
++  When code coverage is enables (via the R_Code_Coverage global var),
++  each call to the getSrcref() function will record the current srcref filename and line
++  number.
++  The code coverage support is controlled by the R_CODE_COVERAGE preprocessor define.
++
++  The actual implementation consists for the moment in intercepting getSrcref() calls,
++  then calling the record_code_coverage() function.
++  The code coverage tracing is activating by calling the do_Rcov() (Rcov from R) function.
++
++  Karl Forner
++ */
++
++/*   global variable: hit lines freqs: a HashedEnv by filename */
++static SEXP R_Cov_freqs_hash = NULL;
++
++/* create a new non-sparsed vector of line frequencies at least of length size.
++ * Depending on the do_Rcov_start params nb_lines and growth_rate,
++ * it will allocate an actual size of either nb_lines or size * growth_rate
++ */
++static SEXP cov_new_lines_vector(int size) {
++	SEXP sexp, lines;
++	int nb_lines, i;
++	int *tab;
++	double growth_rate;
++
++	sexp = findVarInFrame(R_Cov_freqs_hash, install(".nb_lines"));
++	nb_lines = INTEGER(sexp)[0];
++	if (size > nb_lines) {
++		sexp = findVarInFrame(R_Cov_freqs_hash, install(".growth_rate"));
++		growth_rate = REAL(sexp)[0];
++		size = (int)(size * growth_rate);
++	} else {
++		size = nb_lines;
++	}
++
++	PROTECT(lines = allocVector(INTSXP, size));
++	tab = INTEGER(lines);
++	for (i = 0; i < size; ++i)
++		tab[i] = 0;
++	UNPROTECT(1);
++	return lines;
++}
++
++/* store a new line occurrence in R_Cov_freqs_hash for filename */
++static void cov_store_new_line(const char* filename, int line) {
++	SEXP lines, lines2;
++	int len, i, *t1, *t2;
++
++	lines = findVarInFrame(R_Cov_freqs_hash, install(filename));
++	if (lines == R_UnboundValue) { /* new file */
++		lines = cov_new_lines_vector(line + 1);
++		defineVar(install(filename), lines, R_Cov_freqs_hash);
++	}
++	if (length(lines) <= line) {
++		/* lines vector too short */
++		PROTECT(lines2 = cov_new_lines_vector(line + 1)); /* should allocate (line+1)*growth_rate */
++		len = length(lines);
++		i = 0;
++		t1 = INTEGER(lines);
++		t2 = INTEGER(lines2);
++		for (i = 0; i < len; ++i)
++			lines2[i] = lines[i];
++		defineVar(install(filename), lines2, R_Cov_freqs_hash);
++		lines = lines2;
++		UNPROTECT(1);
++	}
++
++	INTEGER(lines)[line]++;
++}
++
++/* maybe store a new srcref in R_Cov_freqs_hash */
++static void record_code_coverage(SEXP srcref)
++{
++	if (srcref && !isNull(srcref)) {
++		int fnum, line = asInteger(srcref);
++
++		SEXP srcfile = getAttrib(srcref, R_SrcfileSymbol);
++		const char *filename;
++
++		if (!srcfile || TYPEOF(srcfile) != ENVSXP) return;
++		srcfile = findVar(install("filename"), srcfile);
++		if (TYPEOF(srcfile) != STRSXP || !length(srcfile)) return;
++
++		filename = CHAR(STRING_ELT(srcfile, 0));
++		cov_store_new_line(filename, line);
++	}
++}
++
++
++/* This initiates the code coverage tracing.
++ * nb_lines is the initial size of frequencies vectors per file.
++ * If a line number L is encountered s.t L >=nb_lines, the vector will be extended
++ * to L * growth_rate
++ */
++void do_Rcov_start(int nb_lines, double growth_rate)
++{
++	SEXP sexp;
++
++	if (growth_rate < 1.1)
++		growth_rate = 1.1;
++
++	if (R_Code_Coverage) return;
++	R_Code_Coverage = 1;
++	if (R_Cov_freqs_hash != NULL)
++		R_ReleaseObject(R_Cov_freqs_hash);
++
++	/* put the params nb_lines and growth_rate as hidden vars of the hashed env */
++	R_Cov_freqs_hash = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
++	R_PreserveObject(R_Cov_freqs_hash);
++	PROTECT(sexp = ScalarInteger(nb_lines));
++	defineVar(install(".nb_lines"), sexp, R_Cov_freqs_hash);
++
++	PROTECT(sexp = ScalarReal(growth_rate));
++	defineVar(install(".growth_rate"), sexp, R_Cov_freqs_hash);
++
++	UNPROTECT(2);
++}
++
++/* Ends the code coverage tracing.
++ * and returns an environment with symbols named after the covered source files and values
++ * matrices of dim n*2, which first column is the line number and the second the nb of occurrences
++ */
++SEXP do_Rcov_stop(void)
++{
++	SEXP names, lines, mat, key, res;
++	int n, i, j, k, nb_lines, non_empty_lines, *tab, *m;
++
++	/* stop the code covered tracing */
++	R_Code_Coverage = 0;
++
++	/* convert frequencies by line to matrix N*2 of lines, freq */
++	PROTECT(names = R_lsInternal(R_Cov_freqs_hash, FALSE));
++	n = length(names);
++
++	for (i = 0; i < n; ++i) {
++		key = install(CHAR(STRING_ELT(names, i)));
++		lines = findVarInFrame(R_Cov_freqs_hash, key);
++
++		tab = INTEGER(lines);
++		nb_lines = length(lines);
++		non_empty_lines = 0;
++		for (j = 0; j < nb_lines; ++j)
++			if (tab[j])
++				++non_empty_lines;
++
++		PROTECT(mat = allocMatrix(INTSXP, non_empty_lines, 2));
++		m = INTEGER(mat);
++		k = 0;
++		for (j = 0; j < nb_lines; ++j) {
++			if (tab[j]) {
++				m[k] = j;
++				m[k + non_empty_lines] = tab[j];
++				++k;
++			}
++		}
++
++		defineVar(key, mat, R_Cov_freqs_hash);
++		UNPROTECT(1); /* mat */
++	}
++	UNPROTECT(1); /* names */
++
++	res = R_Cov_freqs_hash;
++	R_ReleaseObject(R_Cov_freqs_hash);
++	R_Cov_freqs_hash = NULL;
++
++    return res;
++}
++
++
++#else /* not R_CODE_COVERAGE */
++
++void do_Rcov_start(int nb_lines, int growth_rate)
++{
++    error(_("do_Rcov_start: R code coverage is not available on this system"));
++    return R_NilValue;		/* -Wall */
++}
++
++SEXP do_Rcov_stop()
++{
++    error(_("do_Rcov_stop: R code coverage is not available on this system"));
++	R_Code_Coverage = 0;
++}
++
++
++#endif
++
++
++
++
++
+ /* BC_PROILFING needs to be defined here and in registration.c */
+ /*#define BC_PROFILING*/
+ #ifdef BC_PROFILING
+@@ -837,10 +1033,17 @@
+ 	&& length(srcrefs) > ind
+ 	&& !isNull(result = VECTOR_ELT(srcrefs, ind))
+ 	&& TYPEOF(result) == INTSXP
+-	&& length(result) >= 6)
+-	return result;
+-    else
+-	return R_NilValue;
++	&& length(result) >= 6) {
++
++#ifdef R_CODE_COVERAGE
++    	if (R_Code_Coverage) record_code_coverage(result);
++#endif
++
++    } else {
++    	result = R_NilValue;
++    }
++
++    return result;
+ }
+ 
+ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
