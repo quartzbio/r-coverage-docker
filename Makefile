@@ -10,6 +10,8 @@ run-bash:
 	docker run -ti  $(NAME) bash
 
 run-test: 
-	docker run -ti $(NAME) Rscript test.R
+	docker run -ti $(NAME) Rscript_cov test.R
 
 
+run-root:
+	docker run -ti  -u root $(NAME)  bash

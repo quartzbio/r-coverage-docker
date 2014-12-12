@@ -1,5 +1,3 @@
-library(devtools)
-library(methods)
 "tested_function <- function(x) {  # 1
   if (x == 0) return(0)
 	
