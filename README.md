@@ -17,12 +17,12 @@ And don't forget to Star the project if you like it!
 
 ## Contents
 
-* [Introduction](#Introduction)
+* [Introduction](#introduction)
 
-* [Installation](#Installation)
-	* [Building the docker container](#Building the docker container)
+* [Installation](#installation)
+	* [Building the docker container](#building the docker container)
 
-* [Usage](#Usage)
+* [Usage](#usage)
 
 ## Introduction
 
