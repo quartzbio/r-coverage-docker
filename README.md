@@ -20,7 +20,7 @@ And don't forget to Star the project if you like it!
 * [Introduction](#introduction)
 
 * [Installation](#installation)
-	* [Building the docker container](#building the docker container)
+	* [Building the docker container](#building-the-docker-container)
 
 * [Usage](#usage)
 
