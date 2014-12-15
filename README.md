@@ -20,9 +20,11 @@ And don't forget to Star the project if you like it!
 * [Introduction](#introduction)
 
 * [Installation](#installation)
-	* [Building the docker container](#building-the-docker-container)
 
 * [Usage](#usage)
+
+* [Resources](#resources)
+
 
 ## Introduction
 
@@ -155,6 +157,12 @@ docker run -ti  -v $DIR:/home/docker/code rcov-r302
 ...
 ```
 
+## Resources
+
+Use the github issues for bugs, questions, requests and general discussions.
+
+ - cf the related project: https://github.com/quartzbio/r-coverage-patch.git
+ - this blog post: http://r2d2.quartzbio.com/posts/top10_coverage.html
 
 
 
