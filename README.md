@@ -1,5 +1,5 @@
-r-coverage
-==========
+r-coverage-docker
+=================
 
 A docker container providing:
   * a patched R interpreter/installation with builtin coverage support.
