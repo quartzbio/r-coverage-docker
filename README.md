@@ -3,7 +3,7 @@ r-coverage
 
 A docker container providing:
   * a patched R interpreter/installation with builtin coverage support.
-  * and also a normal (unpatched) for easy comparison. 
+  * and also a normal (unpatched) R for easy comparison. 
   
  Both R installations share installed packages.
 
@@ -20,7 +20,9 @@ And don't forget to Star the project if you like it!
 * [Introduction](#Introduction)
 
 * [Installation](#Installation)
-	* [Building the docker container](#uilding the docker container)
+	* [Building the docker container](#Building the docker container)
+
+* [Usage](#Usage)
 
 ## Introduction
 
@@ -107,13 +109,53 @@ eval(expr)
 ### execute a function call, tracking the code coverage
 Rcov_start()
 tested_function(1)
-env <- Rcov_stop()
 
-### format and display the results
-res <- lapply(ls(env), get, envir = env)
-names(res) <- ls(env)
+res <- as.list(Rcov_stop())
 print(res)
 ```
+
+### coverage of a CRAN package
+Let's look at the coverage of the stringr package:
+Launch the R patched console: `make run`
+```r
+library(devtools)
+pkg <- download.packages('stringr', '.')
+untar(pkg[2], compressed=TRUE)
+Rcov_start()
+test('stringr')
+res <- as.list(Rcov_stop())
+print(res)
+```
+
+### coverage of a github package
+Let's look at the coverage of the crayon package:
+Launch the R patched console: `make run`
+```r
+library(devtools)
+
+# the R-3.0.2 is quite old now, get a compatible version
+pkg <- devtools:::github_remote("hadley/stringr", ref = 'stringr-0.6.2')
+fname <- devtools:::remote_download(pkg)
+repo <- dirname(files[1])
+files <- unzip(fname)
+repo <- dirname(files[1])
+Rcov_start()
+test(repo)
+res <- as.list(Rcov_stop())
+print(res)
+```
+
+### coverage of a local source package (or script)
+We can use the docker volume feature (shared filesystem) to mount a local directory inside the docker container.
+Suppose that the R source code is in the $DIR directory on the local filesystem.
+We will mount the directory $DIR as ~/code in the docker:
+```bash
+docker run -ti  -v $DIR:/home/docker/code rcov-r302
+>setwd('code')
+...
+```
+
+
 
 
 
