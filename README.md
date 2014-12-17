@@ -2,7 +2,7 @@ r-coverage-docker
 =================
 
 A docker container providing:
-  * a patched R interpreter/installation with builtin **code coverage** support.
+  * a patched [R](http://www.r-project.org/) interpreter/installation with builtin **code coverage** support.
   * and also a normal (unpatched) R for easy comparison. 
   
  Both R installations share installed packages.
