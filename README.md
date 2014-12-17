@@ -23,6 +23,8 @@ And don't forget to Star the project if you like it!
 
 * [Usage](#usage)
 
+* [Status/Roadmap](#status-roadmap)
+
 * [Resources](#resources)
 
 
@@ -32,6 +34,9 @@ This project allows to build a docker container containing a patched version of 
 which provides a new feature: **code coverage**.
 
 ## Installation
+
+**N.B**: You do no need to install it if you use it directly from the docker hub (recommended).
+These instructions are only provided for those willing to build the docker container from scratch.
 
 It should work on all platforms supporting docker: cf https://docs.docker.com/installation/.
 The very first step is to install docker.
@@ -46,6 +51,8 @@ A unix-like terminal and GNU make.
 ```bash
 git clone https://github.com/quartzbio/r-coverage.git
 cd r-coverage
+# choose the version to build
+cd rxxx
 # build the docker container: QUITE LONG
 make build
 ```
@@ -60,12 +67,14 @@ All installed packages (present and future) are shared between the two R install
 
 The essential **devtools** package is preinstalled.
 
-
+### choosing your version
+We provide docker containers for several versions of R. If you built the container, just **cd** in the appropriate rxxx subdirectory (e.g. r312 for R-3.1.2). If you use the docker hub, use the appropriate [tags](https://registry.hub.docker.com/u/quartzbio/r-coverage/tags/manage/). In the examples below we use the default tag (latest).
 
 ### running the provided example: testthat code coverage
 
 ```
-make run-test
+docker run -ti quartzbio/r-coverage Rscript_cov test.R
+# or: make run-test
 ```
 This runs the testthat (version 0.7.1) own test suite, and displays in a crude way the corresponding code coverage.
 Excerpt of the output:
@@ -79,7 +88,7 @@ $`/home/docker/testthat/R/utils.r`
 It means that the line 2 has been hit 1 time, thes line 3 and 4 55 times. 
 
 ### running an interactive console session
-Type `make run`, you end up in the patched R console.
+Typing `docker run -ti quartzbio/r-coverage` (or `make run`), you end up in the patched R console.
 **Rcov_start()** starts the code coverage tracking, then execute your code, and finally  Rcov_stop() stops the 
 tracking and returns an environment, with the tracked source file names as keys and hit matrices as values.
 
@@ -118,7 +127,7 @@ print(res)
 
 ### coverage of a CRAN package
 Let's look at the coverage of the stringr package:
-Launch the R patched console: `make run`
+Launch the R patched console: `docker run -ti quartzbio/r-coverage` (or `make run`)
 ```r
 library(devtools)
 pkg <- download.packages('stringr', '.')
@@ -131,7 +140,7 @@ print(res)
 
 ### coverage of a github package
 Let's look at the coverage of the crayon package:
-Launch the R patched console: `make run`
+Launch the R patched console: `docker run -ti quartzbio/r-coverage` (or `make run`)
 ```r
 library(devtools)
 
@@ -152,13 +161,31 @@ We can use the docker volume feature (shared filesystem) to mount a local direct
 Suppose that the R source code is in the $DIR directory on the local filesystem.
 We will mount the directory $DIR as ~/code in the docker:
 ```bash
-docker run -ti  -v $DIR:/home/docker/code rcov-r302
+docker run -ti  -v $DIR:/home/docker/code quartzbio/r-coverage
+# or: docker run -ti  -v $DIR:/home/docker/code rcov-r302
 >setwd('code')
 ...
 ```
 
-## Resources
+## Status / Roadmap 
 
+### stability
+Orginally this patch is just a very first draft as a proof of concept for the R community. 
+I got absolutely no feedback on its implementation, but it seems to work amazingly well, 
+at least for our purposes. In Quartz Bio we have used it daily for months 
+to test the coverage of our numerous internal R packages without problems.
+
+### code coverage statistics
+Of course, as it is, just outputting the covered lines is not very useful. 
+We have developed for our needs 
+some code that output the code coverage percentage by source code file and package.
+We could package this code and release it if the R community asks for it.
+
+### GUI
+We might also develop/provide a GUI to quickly see the lines that are not covered directly in the source code.
+
+
+## Resources
 Use the github issues for bugs, questions, requests and general discussions.
 
  - cf the related project: https://github.com/quartzbio/r-coverage-patch.git
